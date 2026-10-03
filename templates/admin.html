@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>門市即時客戶接洽看板</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #eef2f5; }
+        h1 { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #34495e; color: white; }
+        .mask-btn { background: #17a2b8; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>門市即時客戶接洽看板 (個資保護模式)</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>單號</th><th>時間</th><th>姓名</th><th>電話</th><th>商品類型</th><th>故障問題</th><th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="list"></tbody>
+    </table>
+
+<script>
+    const socket = io();
+    const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+
+    socket.on('new_order', (data) => {
+        audio.play().catch(()=>{});
+        const tbody = document.getElementById('list');
+        const tr = document.createElement('tr');
+        tr.id = 'row-' + data.id;
+        tr.innerHTML = `
+            <td>${data.id}</td>
+            <td>${data.time}</td>
+            <td class="name-td" data-raw="${data.raw_name}" data-masked="${data.masked_name}">${data.masked_name}</td>
+            <td class="phone-td" data-raw="${data.raw_phone}" data-masked="${data.masked_phone}">${data.masked_phone}</td>
+            <td>${data.item_type}</td>
+            <td>${data.issue}</td>
+            <td><button class="mask-btn" onclick="toggleMask('${data.id}')">解鎖個資</button></td>
+        `;
+        tbody.insertBefore(tr, tbody.firstChild);
+    });
+
+    function toggleMask(id) {
+        const tr = document.getElementById('row-' + id);
+        const nameTd = tr.querySelector('.name-td');
+        const phoneTd = tr.querySelector('.phone-td');
+        const btn = tr.querySelector('.mask-btn');
+        if (btn.innerText === "解鎖個資") {
+            nameTd.innerText = nameTd.dataset.raw;
+            phoneTd.innerText = phoneTd.dataset.raw;
+            btn.innerText = "隱藏個資";
+        } else {
+            nameTd.innerText = nameTd.dataset.masked;
+            phoneTd.innerText = phoneTd.dataset.masked;
+            btn.innerText = "解鎖個資";
+        }
+    }
+</script>
+</body>
+</html>

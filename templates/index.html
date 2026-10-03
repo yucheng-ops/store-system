@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>門市客戶接洽單</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f4f6f9; padding: 20px 15px; margin: 0; }
+        .card { background: white; max-width: 450px; margin: 0 auto; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .type-btn { border: 1px solid #ccc; padding: 10px; border-radius: 6px; text-align: center; background: #f8f9fa; cursor: pointer; font-weight: bold; }
+        .type-btn.active { background: #007bff; color: white; border-color: #007bff; }
+        button[type="submit"] { width: 100%; background: #28a745; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>門市客戶接洽單</h2>
+    <form id="form">
+        <div class="form-group">
+            <label>姓名 *</label>
+            <input type="text" id="name" required placeholder="請輸入姓名">
+        </div>
+        <div class="form-group">
+            <label>聯絡電話 *</label>
+            <input type="text" id="phone" required placeholder="手機或市話">
+        </div>
+        <div class="form-group">
+            <label>商品類型 *</label>
+            <div class="btn-grid">
+                <div class="type-btn" onclick="setType(this, '電子鍋')">電子鍋</div>
+                <div class="type-btn" onclick="setType(this, '熱水瓶')">熱水瓶</div>
+                <div class="type-btn" onclick="setType(this, '其他電類')">其他電類</div>
+                <div class="type-btn" onclick="setType(this, '非電類')">非電類</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>故障問題 *</label>
+            <textarea id="issue" rows="3" required placeholder="請簡述故障狀況"></textarea>
+        </div>
+        <button type="submit" id="btn">確認送出</button>
+    </form>
+</div>
+<script>
+    const socket = io();
+    let selectedType = '';
+    function setType(el, type) {
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        selectedType = type;
+    }
+    document.getElementById('form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        if(!selectedType) return alert("請選擇商品類型");
+        const phone = document.getElementById('phone').value.trim();
+        if(!/^09\d{8}$/.test(phone) && !/^0\d{1,2}-?\d{6,8}$/.test(phone)) return alert("請輸入有效的電話格式！");
+        
+        socket.emit('submit_repair', {
+            name: document.getElementById('name').value.trim(),
+            phone: phone,
+            itemType: selectedType,
+            issue: document.getElementById('issue').value.trim()
+        });
+        alert("資料已傳送至門市人員！");
+        location.reload();
+    });
+</script>
+</body>
+</html>
